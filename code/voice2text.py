@@ -6,11 +6,11 @@ import math
 
 model_size = "large-v3-turbo"
 
-# Run on GPU with FP16
-# model = WhisperModel(model_size, device="cuda", compute_type="float16")
+# Run on GPU with auto
+# model = WhisperModel(model_size, device="cuda", compute_type="auto")
 
-# Run on CPU with INT16
-model = WhisperModel(model_size, device="cpu", compute_type="int16")
+# Run on CPU with int8, int16, auto
+model = WhisperModel(model_size, device="cpu", compute_type="auto")
 
 # Get audio filename from args or fail if not provided
 if len(sys.argv) <= 1:
@@ -50,13 +50,13 @@ start_time = time.time()
 
 try:
     # Attempt the transcription
-    segments, info = model.transcribe(input_path, beam_size=5, vad_filter=True)
+    segments, info = model.transcribe(input_path, beam_size=10, vad_filter=True)
       # Check if language probability is NaN (not a number)
     if math.isnan(info.language_probability) or info.language_probability < 0.8:
-        print("Error: Language detection failed. Probability is %f for language '%s'" % (info.language_probability, info.language))
+        print("Error: Language detection failed. Probability is %.2f for language '%s'" % (info.language_probability, info.language))
         sys.exit(1)
         
-    print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
+    print("Detected language '%s' with probability %.2f" % (info.language, info.language_probability))
     
     # Process segments and prepare text
     full_text = ""
@@ -69,7 +69,7 @@ try:
     # Print segments to console
     for segment in segment_list:
         segment_text = segment.text.strip()
-        full_text += segment_text + " "
+        full_text += segment_text + "\n"
         print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment_text))
     
     # Only write to file if we have successfully processed all segments
