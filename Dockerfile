@@ -26,5 +26,8 @@ RUN pip cache purge
 # Set working directory
 WORKDIR /app
 
+# expose ports
+EXPOSE 10300
+
 # default command
 CMD ["/bin/bash"]
