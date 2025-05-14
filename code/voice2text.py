@@ -1,12 +1,13 @@
 from faster_whisper import WhisperModel
 import os
 import sys
+import time
 
 model_size = "large-v3-turbo"
 
 # Run on GPU with FP16
-# model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
-model = WhisperModel(model_size, device="cpu", compute_type="int8")
+model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
+# model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
 # Get audio filename from args or fail if not provided
 if len(sys.argv) <= 1:
@@ -41,6 +42,9 @@ else:
 
 print(f"Transcribing {input_path}...")
 
+# Start timer
+start_time = time.time()
+
 try:
     # Attempt the transcription
     segments, info = model.transcribe(input_path, beam_size=5, vad_filter=True)
@@ -68,8 +72,14 @@ try:
         
         # Write the full combined text
         f.write(full_text.strip())
+        print(f"\nTranscription saved to {output_file}")
     
-    print(f"\nTranscription saved to {output_file}")
+    # Calculate and display elapsed time
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    minutes = int(elapsed_time // 60)
+    seconds = int(elapsed_time % 60)
+    print(f"Total processing time: {minutes} minutes and {seconds} seconds")
     
 except Exception as e:
     print(f"Error during transcription: {str(e)}")

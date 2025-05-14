@@ -93,6 +93,24 @@ python3 /app/code/voice2text.py "/app/audio/Cu cine votează Victor Ponta pe 18 
 docker-compose down
 ```
 
+### Cleaning Up Docker Resources
+
+After building and using Docker images, you might want to clean up unused resources to save disk space:
+
+```powershell
+# Remove all stopped containers
+docker container prune -f
+
+# Remove unused images
+docker image prune -f
+
+# Remove all unused build cache
+docker builder prune -f
+
+# For a complete cleanup (use with caution - removes all unused containers, networks, images, and volumes)
+docker system prune -f
+```
+
 ## System Requirements
 
 - Docker and Docker Compose installed
