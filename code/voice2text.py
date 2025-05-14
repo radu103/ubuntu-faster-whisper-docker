@@ -2,12 +2,13 @@ from faster_whisper import WhisperModel
 import os
 import sys
 import time
+import math
 
 model_size = "large-v3-turbo"
 
 # Run on GPU with FP16
-model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
-# model = WhisperModel(model_size, device="cpu", compute_type="int8")
+# model = WhisperModel(model_size, device="cuda")
+model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
 # Get audio filename from args or fail if not provided
 if len(sys.argv) <= 1:
@@ -49,6 +50,11 @@ try:
     # Attempt the transcription
     segments, info = model.transcribe(input_path, beam_size=5, vad_filter=True)
     
+    # Check if language probability is NaN (not a number)
+    if math.isnan(info.language_probability):
+        print("Error: Language detection failed. Probability is NaN.")
+        sys.exit(1)
+        
     print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
     
     # Process segments and prepare text
