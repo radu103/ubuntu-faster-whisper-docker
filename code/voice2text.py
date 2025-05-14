@@ -5,12 +5,8 @@ import sys
 model_size = "large-v3-turbo"
 
 # Run on GPU with FP16
-model = WhisperModel(model_size, device="cpu", compute_type="int8")
-
-# or run on GPU with INT8
 # model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
-# or run on CPU with INT8
-# model = WhisperModel(model_size, device="cpu", compute_type="int8")
+model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
 # Get audio filename from args or fail if not provided
 if len(sys.argv) <= 1:
