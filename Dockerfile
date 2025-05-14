@@ -27,4 +27,4 @@ RUN pip cache purge
 WORKDIR /app
 
 # default command
-CMD ["faster-whisper"]
+CMD ["/bin/bash"]
