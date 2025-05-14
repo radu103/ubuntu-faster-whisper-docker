@@ -18,7 +18,7 @@ RUN apt-get clean
 RUN pip install --upgrade pip
 
 # Install openai-whisper + hf_xet
-RUN pip install -U openai-whisper hf_xet
+RUN pip install -U faster-whisper hf_xet
 
 # clean up
 RUN pip cache purge
@@ -27,4 +27,4 @@ RUN pip cache purge
 WORKDIR /app
 
 # default command
-CMD ["whisper"]
+CMD ["faster-whisper"]

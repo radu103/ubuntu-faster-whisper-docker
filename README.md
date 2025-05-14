@@ -55,14 +55,6 @@ docker push radu103/ubuntu-faster-whisper:latest
 
 A docker-compose.yml file is included for easier management of the container.
 
-### Directory Setup
-
-Before running, create the necessary directories for your audio files and output:
-
-```bash
-mkdir -p audio output
-```
-
 ### Starting the Container
 
 ```bash
@@ -74,12 +66,6 @@ This will:
 - Start the container in detached mode
 - Mount the ./audio and ./output directories
 - Enable GPU support if available
-
-### Accessing the Container
-
-```bash
-docker-compose exec faster-whisper bash
-```
 
 ### Run the conversion
 
