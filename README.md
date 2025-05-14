@@ -1,1 +1,99 @@
-# ubuntu-faster-whisper-docker
+# Ubuntu Faster-Whisper Docker
+
+A Docker container based on Ubuntu 22.04 LTS with [faster-whisper](https://github.com/guillaumekln/faster-whisper) installed. This container provides a ready-to-use environment for running OpenAI's Whisper automatic speech recognition (ASR) model with improved performance.
+
+## Features
+
+- Based on Ubuntu 22.04 LTS
+- CUDA support for GPU acceleration
+- Python 3 with PyTorch and faster-whisper pre-installed
+- FFmpeg for audio processing
+
+## Building and Running with Docker
+
+### Building the Docker Image
+
+```bash
+docker build -t ubuntu-faster-whisper .
+```
+
+### Running the Container
+
+#### Basic Usage
+
+```bash
+docker run -it --rm ubuntu-faster-whisper
+```
+
+#### With GPU Support
+
+```bash
+docker run -it --rm --gpus all ubuntu-faster-whisper
+```
+
+### Tagging and Pushing to a Docker Registry
+
+After building your image, you may want to tag it and push it to a Docker registry for sharing or deployment:
+
+#### Tag the Image
+
+```bash
+docker tag ubuntu-faster-whisper:latest radu103/ubuntu-faster-whisper:latest
+```
+
+#### Push to Docker Hub
+
+```bash
+# Login to Docker Hub first
+docker login
+
+# Push the image
+docker push radu103/ubuntu-faster-whisper:latest
+```
+
+## Using Docker Compose
+
+A docker-compose.yml file is included for easier management of the container.
+
+### Directory Setup
+
+Before running, create the necessary directories for your audio files and output:
+
+```bash
+mkdir -p audio output
+```
+
+### Starting the Container
+
+```bash
+docker-compose up -d
+```
+
+This will:
+- Build the image if it doesn't exist
+- Start the container in detached mode
+- Mount the ./audio and ./output directories
+- Enable GPU support if available
+
+### Accessing the Container
+
+```bash
+docker-compose exec faster-whisper bash
+```
+
+### Run the conversion
+
+```bash
+python3 /app/code/voice2text.py "/app/audio/Cu cine votează Victor Ponta pe 18 mai_ Credeam cu Simion, dar s-a trezit să mă facă cu ou și oțet.mp3"
+```
+
+### Stopping the Container
+
+```bash
+docker-compose down
+```
+
+## System Requirements
+
+- Docker and Docker Compose installed
+- For GPU support: NVIDIA GPU with CUDA support and nvidia-container-toolkit installed

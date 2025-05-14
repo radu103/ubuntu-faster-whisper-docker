@@ -1,0 +1,29 @@
+name: ubuntu-faster-whisper
+
+services:
+  faster-whisper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ubuntu-faster-whisper
+    container_name: faster-whisper
+    volumes:
+     # Mount a local directory for audio files (change the left side to your local path)
+      - ./code:/app/code
+      # Mount a local directory for audio files (change the left side to your local path)
+      - ./audio:/app/audio
+      # Mount a local directory for output transcriptions
+      - ./output:/app/output
+      # mount models downloaded by the container
+      - ./cache:/root/.cache
+    # Enable GPU support
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+    # Keep the container running
+    stdin_open: true
+    tty: true
