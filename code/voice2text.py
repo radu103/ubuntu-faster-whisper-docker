@@ -7,7 +7,7 @@ import math
 model_size = "large-v3-turbo"
 
 # Run on GPU with auto
-# model = WhisperModel(model_size, device="cuda", compute_type="auto")
+# model = WhisperModel(model_size, device="cuda", compute_type="float16")
 
 # Run on CPU with int8, int16, auto
 model = WhisperModel(model_size, device="cpu", compute_type="auto")
@@ -50,7 +50,7 @@ start_time = time.time()
 
 try:
     # Attempt the transcription
-    segments, info = model.transcribe(input_path, beam_size=10, vad_filter=True)
+    segments, info = model.transcribe(input_path, vad_filter=True)
       # Check if language probability is NaN (not a number)
     if math.isnan(info.language_probability) or info.language_probability < 0.8:
         print("Error: Language detection failed. Probability is %.2f for language '%s'" % (info.language_probability, info.language))
@@ -78,16 +78,18 @@ try:
         f.write(f"# Transcription of {audio_basename}\n")
         f.write(f"# Detected language: {info.language} (probability: {info.language_probability:.2f})\n\n")
         
+        # Calculate and display elapsed time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+        print(f"Total processing time: {minutes} minutes and {seconds} seconds")
+
+        full_text += "\n\n" + f"Total processing time: {minutes} minutes and {seconds} seconds"
+
         # Write the full combined text
         f.write(full_text.strip())
         print(f"\nTranscription saved to {output_file}")
-    
-    # Calculate and display elapsed time
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    minutes = int(elapsed_time // 60)
-    seconds = int(elapsed_time % 60)
-    print(f"Total processing time: {minutes} minutes and {seconds} seconds")
     
 except Exception as e:
     print(f"Error during transcription: {str(e)}")
