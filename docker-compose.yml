@@ -2,11 +2,7 @@ name: ubuntu-faster-whisper
 
 services:
   faster-whisper:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ubuntu-faster-whisper
-    container_name: faster-whisper
+    image: radu103/ubuntu-faster-whisper:latest
     volumes:
      # Mount a local directory for audio files (change the left side to your local path)
       - ./code:/app/code
