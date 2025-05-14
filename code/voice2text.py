@@ -4,11 +4,13 @@ import sys
 import time
 import math
 
-model_size = "large-v3"
+model_size = "large-v3-turbo"
 
 # Run on GPU with FP16
-model = WhisperModel(model_size, device="cuda", compute_type="auto")
-# model = WhisperModel(model_size, device="cpu", compute_type="int8")
+# model = WhisperModel(model_size, device="cuda", compute_type="float16")
+
+# Run on CPU with INT16
+model = WhisperModel(model_size, device="cpu", compute_type="int16")
 
 # Get audio filename from args or fail if not provided
 if len(sys.argv) <= 1:
