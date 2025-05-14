@@ -69,8 +69,9 @@ try:
     # Print segments to console
     for segment in segment_list:
         segment_text = segment.text.strip()
-        full_text += segment_text + "\n"
-        print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment_text))
+        seg_text = "[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment_text)
+        print(seg_text)
+        full_text += seg_text + "\n"
     
     # Only write to file if we have successfully processed all segments
     with open(output_file, 'w', encoding='utf-8') as f:
