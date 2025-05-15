@@ -46,7 +46,7 @@ RUN mkdir -p /app/audio /app/output /app/code/static
 COPY ./code /app/code
 
 # expose ports
-EXPOSE 10300 10301
+EXPOSE 10301
 
 # default command to run the API server
 CMD ["python3", "/app/code/api_server.py"]
