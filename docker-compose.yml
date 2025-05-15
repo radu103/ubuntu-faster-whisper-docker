@@ -4,14 +4,15 @@ services:
   faster-whisper:
     image: radu103/ubuntu-faster-whisper:latest
     volumes:
-     # Mount a local directory for audio files (change the left side to your local path)
-      - ./code:/app/code
       # Mount a local directory for audio files (change the left side to your local path)
       - ./audio:/app/audio
       # Mount a local directory for output transcriptions
       - ./output:/app/output
       # mount models downloaded by the container
-      - ./cache:/root/.cache
+      - ./cache:/root/.cache    # Map API port
+    ports:
+      - "10300:10300"
+      - "10301:10301"
     # Enable GPU support
     deploy:
       resources:

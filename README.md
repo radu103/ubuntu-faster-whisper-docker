@@ -79,6 +79,47 @@ python3 /app/code/voice2text.py "/app/audio/Cu cine votează Victor Ponta pe 18 
 docker-compose down
 ```
 
+## Using the REST API
+
+The container includes a REST API server for uploading audio files and managing transcription jobs.
+
+### Accessing the API
+
+When the container is running, the API is available at:
+
+```
+http://localhost:10301
+```
+
+### API Endpoints
+
+- **GET /** - Web interface with simple upload form
+- **POST /upload** - Upload an audio file for transcription
+- **GET /jobs/:job_id** - Get status of a specific job
+- **GET /jobs** - List all jobs
+- **GET /download/:job_id** - Download transcription result
+
+### Example: Upload a file with cURL
+
+```bash
+# Upload audio file for transcription
+curl -X POST -F "file=@your_audio.mp3" http://localhost:10301/upload
+```
+
+### Example: Check job status
+
+```bash
+# Get job status
+curl http://localhost:10301/jobs/YOUR_JOB_ID
+```
+
+### Example: Download transcription
+
+```bash
+# Download the transcription file
+curl -O http://localhost:10301/download/YOUR_JOB_ID
+```
+
 ### Cleaning Up Docker Resources
 
 After building and using Docker images, you might want to clean up unused resources to save disk space:

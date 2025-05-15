@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice to Text API</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>    <h1>Voice to Text API</h1>
+    <h2>Upload an audio file</h2>
+    <form class="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload and Transcribe">
+    </form>
+      <div class="job-list">
+        <h2>Recent Jobs</h2>
+        <p>Refresh the page to update the job list</p>
+        <div class="table-container">
+            <table id="jobTable">
+                <caption>Transcription Jobs</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Filename</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="jobTableBody">
+                    <!-- Jobs will be loaded here via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+      <h2>API Endpoints</h2>
+    <ul class="api-list">
+        <li><strong>POST /upload</strong> - Upload an audio file for transcription</li>
+        <li><strong>GET /jobs/:job_id</strong> - Get status of a specific job</li>
+        <li><strong>GET /jobs</strong> - List all jobs</li>
+        <li><strong>GET /download/:job_id</strong> - Download transcription result</li>
+    </ul>
+    
+    <h2>Example with CURL</h2>
+    <pre>
+        curl -X POST -F "file=@your_audio.mp3" http://localhost:10301/upload
+    </pre>
+
+    <script>
+        // Function to load jobs
+        function loadJobs() {
+            fetch('/jobs')
+                .then(response => response.json())
+                .then(jobs => {
+                    const tableBody = document.getElementById('jobTableBody');
+                    tableBody.innerHTML = '';
+                    
+                    if (jobs.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="5">No jobs found</td></tr>';
+                        return;
+                    }
+                    
+                    jobs.forEach(job => {
+                        const row = document.createElement('tr');
+                        
+                        // Job ID (shortened)
+                        const idCell = document.createElement('td');
+                        const shortId = job.id.substring(0, 8) + '...';
+                        idCell.textContent = shortId;
+                        idCell.title = job.id;
+                        row.appendChild(idCell);
+                        
+                        // Filename
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = job.original_filename || 'Unknown file';
+                        row.appendChild(nameCell);
+                        
+                        // Status
+                        const statusCell = document.createElement('td');
+                        statusCell.textContent = job.status;
+                        statusCell.className = 'status-' + job.status;
+                        row.appendChild(statusCell);
+                        
+                        // Created at
+                        const createdCell = document.createElement('td');
+                        createdCell.textContent = job.created_at || '';
+                        row.appendChild(createdCell);
+                        
+                        // Actions
+                        const actionCell = document.createElement('td');
+                        
+                        // View details link
+                        const detailsLink = document.createElement('a');
+                        detailsLink.href = '/jobs/' + job.id;
+                        detailsLink.textContent = 'Details';
+                        detailsLink.style.marginRight = '10px';
+                        actionCell.appendChild(detailsLink);
+                        
+                        // Download link if completed
+                        if (job.status === 'completed') {
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = '/download/' + job.id;
+                            downloadLink.textContent = 'Download';
+                            actionCell.appendChild(downloadLink);
+                        }
+                        
+                        row.appendChild(actionCell);
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading jobs:', error);
+                    const tableBody = document.getElementById('jobTableBody');
+                    tableBody.innerHTML = '<tr><td colspan="5">Error loading jobs</td></tr>';
+                });
+        }
+        
+        // Load jobs when page loads
+        document.addEventListener('DOMContentLoaded', loadJobs);
+    </script>
+</body>
+</html>
