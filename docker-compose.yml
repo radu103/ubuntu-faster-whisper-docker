@@ -15,11 +15,11 @@ services:
       - WHISPER_BEAM=10               #optional, default is 5
       - WHISPER_LANG=ro               #optional
       # PostgreSQL settings (optional - comment out if not using PostgreSQL)
-      - POSTGRES_HOST=postgres      #uncomment to use PostgreSQL
-      - POSTGRES_PORT=5432          #uncomment to use PostgreSQL
-      - POSTGRES_DB=whisper         #uncomment to use PostgreSQL
-      - POSTGRES_USER=postgres       #uncomment to use PostgreSQL
-      - POSTGRES_PASSWORD=postgres #uncomment to use PostgreSQL
+      - POSTGRES_HOST=172.100.0.2
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=whisper
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     ports:
       - "10301:10301"
     # Enable GPU support
@@ -48,6 +48,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.100.0.2
 
   pgadmin4:
     depends_on:
@@ -61,6 +64,13 @@ services:
     volumes:
       - pgadmin4_data:/var/lib/pgadmin
     restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.100.0.0/24
 
 volumes:
   faster_whisper_data:
