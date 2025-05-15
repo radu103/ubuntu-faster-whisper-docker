@@ -214,8 +214,14 @@ def upload_file():
         original_filename = file.filename
         # Create a timestamp prefix in format YYYYMMDD_HHMMSS
         timestamp = time.strftime('%Y%m%d_%H%M%S')
+        
+        # Sanitize the filename by replacing spaces and commas with underscores
+        sanitized_filename = original_filename.replace(" ", "_").replace(" ", "_").replace(" ", "_").replace(" ", "_").replace(" ", "_")
+        sanitized_filename = sanitized_filename.replace(",", "_").replace(",", "_").replace(",", "_").replace(",", "_").replace(",", "_")
+        sanitized_filename = sanitized_filename.replace("-", "_").replace("-", "_").replace("-", "_").replace("-", "_").replace("-", "_")
+        
         # Extract just the basename and append timestamp
-        filename_base = os.path.basename(original_filename)
+        filename_base = os.path.basename(sanitized_filename)
         save_filename = f"{timestamp}_{filename_base}"
         
         # Save the file
@@ -226,7 +232,7 @@ def upload_file():
             'id': job_id,
             'status': 'queued',
             'created_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-            'input_file': filepath,
+            'upload_folder': UPLOAD_FOLDER,
             'saved_filename': save_filename,
             'original_filename': original_filename
         }
