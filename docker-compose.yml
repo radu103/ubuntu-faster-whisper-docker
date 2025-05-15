@@ -10,6 +10,13 @@ services:
       - ./output:/app/output
       # mount models downloaded by the container
       - ./cache:/root/.cache    # Map API port
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Bucharest
+      - WHISPER_MODEL=large-v3-turbo
+      - WHISPER_BEAM=10               #optional, default is 5
+      - WHISPER_LANG=ro               #optional
     ports:
       - "10300:10300"
       - "10301:10301"
