@@ -4,12 +4,9 @@ services:
   faster-whisper:
     image: radu103/ubuntu-faster-whisper:latest
     volumes:
-      # Mount a local directory for audio files (change the left side to your local path)
-      - ./audio:/app/audio
-      # Mount a local directory for output transcriptions
-      - ./output:/app/output
-      # Mount models downloaded by the container ofr persistence
-      - ./cache:/root/.cache
+      - faster_whisper_data:/app/audio
+      - faster_whisper_models:/root/.cache
+      - faster_whisper_output:/app/output
     environment:
       - PUID=1000
       - PGID=1000
@@ -66,7 +63,33 @@ services:
     restart: unless-stopped
 
 volumes:
+  faster_whisper_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/audio
+      o: bind
+  faster_whisper_models:
+    driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/models
+      o: bind
+  faster_whisper_output:
+    driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/output
+      o: bind
   postgres_data:
     driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/postgres_data
+      o: bind
   pgadmin4_data:
     driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/pgadmin4_data
+      o: bind
