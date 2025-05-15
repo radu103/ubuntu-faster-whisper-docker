@@ -148,7 +148,7 @@ jobs = load_jobs()
 atexit.register(save_jobs)
 
 def run_transcription(job_id, filepath):
-    """Run the transcription as a background process"""
+    print(f"Starting transcription for job {job_id} with file {filepath}")
     try:
         # Update job status to processing
         jobs[job_id]['status'] = 'processing'
@@ -159,7 +159,7 @@ def run_transcription(job_id, filepath):
         
         # Run the voice2text.py script with the audio file
         result = subprocess.run(
-            ['python3', '/app/code/voice2text.py', filename],
+            ['python3', '/app/code/voice2text.py', filepath],
             capture_output=True,
             text=True
         )
@@ -168,32 +168,34 @@ def run_transcription(job_id, filepath):
         if result.returncode == 0:
             # Get output filename
             audio_name = os.path.splitext(filename)[0]
-            audio_name = audio_name.replace(" ", "_")
-            output_file = f"/app/output/{audio_name}_transcription.txt"
+
+            date = time.strftime('%Y-%m-%d')
+
+            # Create the output directory for the date if it doesn't exist
+            output_folder = os.path.join(OUTPUT_FOLDER, date)
+            os.makedirs(output_folder, exist_ok=True)
+
+            # Save the file
+            output_file = os.path.join(output_folder, f"{audio_name}_transcription.txt")
             
-            if os.path.exists(output_file):
-                with open(output_file, 'r', encoding='utf-8') as f:
-                    transcription_text = f.read()
-                
-                jobs[job_id]['status'] = 'completed'
-                jobs[job_id]['completed_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
-                jobs[job_id]['output_file'] = output_file
-                jobs[job_id]['transcription'] = transcription_text[:1000] + '...' if len(transcription_text) > 1000 else transcription_text
-                # Save jobs to file
-                save_jobs()
-            else:
-                jobs[job_id]['status'] = 'failed'
-                jobs[job_id]['error'] = 'Output file not found'
-                # Save jobs to file
-                save_jobs()
-        else:
-            jobs[job_id]['status'] = 'failed'
-            jobs[job_id]['error'] = result.stderr
+            jobs[job_id]['status'] = 'completed'
+            jobs[job_id]['completed_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
+            jobs[job_id]['output_folder'] = output_folder
+            jobs[job_id]['output_file'] = output_file
+            
             # Save jobs to file
             save_jobs()
+        else:
+            jobs[job_id]['status'] = 'failed'
+            jobs[job_id]['error'] = f"{result.returncode} {result.stdout} {result.stderr}"
+            
+            # Save jobs to file
+            save_jobs()
+
     except Exception as e:
         jobs[job_id]['status'] = 'failed'
         jobs[job_id]['error'] = str(e)
+
         # Save jobs to file
         save_jobs()
 
@@ -214,6 +216,7 @@ def upload_file():
         original_filename = file.filename
         # Create a timestamp prefix in format YYYYMMDD_HHMMSS
         timestamp = time.strftime('%Y%m%d_%H%M%S')
+        date = time.strftime('%Y-%m-%d')
         
         # Sanitize the filename by replacing spaces and commas with underscores
         sanitized_filename = original_filename.replace(" ", "_").replace(" ", "_").replace(" ", "_").replace(" ", "_").replace(" ", "_")
@@ -224,15 +227,22 @@ def upload_file():
         filename_base = os.path.basename(sanitized_filename)
         save_filename = f"{timestamp}_{filename_base}"
         
+        # Create the upload directory for the date if it doesn't exist
+        folder = os.path.join(UPLOAD_FOLDER, date)
+        os.makedirs(folder, exist_ok=True)
+
         # Save the file
-        filepath = os.path.join(UPLOAD_FOLDER, save_filename)
+        filepath = os.path.join(UPLOAD_FOLDER, date, save_filename)
         file.save(filepath)
-          # Initialize job status
+
+        print(f"File saved to {filepath}")
+
+        # Initialize job status
         jobs[job_id] = {
             'id': job_id,
             'status': 'queued',
             'created_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-            'upload_folder': UPLOAD_FOLDER,
+            'upload_folder': folder,
             'saved_filename': save_filename,
             'original_filename': original_filename
         }

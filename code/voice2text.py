@@ -27,7 +27,9 @@ audio_name = os.path.splitext(audio_basename)[0]
 audio_name = audio_name.replace(" ", "_")
 
 # Output file path
-output_dir = "/app/output"
+date = time.strftime('%Y-%m-%d')
+output_dir = os.path.join('/app/output', date)
+os.makedirs(output_dir, exist_ok=True)
 output_file = os.path.join(output_dir, f"{audio_name}_transcription.txt")
 
 # Delete existing transcription file if it exists
@@ -88,7 +90,7 @@ try:
         elapsed_time = end_time - start_time
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
-        print(f"Total processing time: {minutes} minutes and {seconds} seconds")
+        print(f"\n\nTotal processing time: {minutes} minutes and {seconds} seconds")
 
         full_text += "\n\n" + f"Total processing time: {minutes} minutes and {seconds} seconds"
 

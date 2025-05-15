@@ -40,7 +40,9 @@
                         <h2 class="h4 m-0"><i class="bi bi-list-check"></i> Recent Jobs</h2>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted"><i class="bi bi-arrow-clockwise"></i> Refresh the page to update the job list</p>
+                        <div class="mb-3">
+                            <input type="text" id="jobFilterInput" class="form-control" placeholder="Filter jobs by filename or status...">
+                        </div>
                         <div class="table-responsive">
                             <table id="jobTable" class="table table-striped table-hover">
                                 <caption class="caption-top bg-light p-2 rounded border">Transcription Jobs</caption>
@@ -101,85 +103,107 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Store jobs globally for filtering/sorting
+        let allJobs = [];
+
+        // Function to render jobs in the table
+        function renderJobs(jobs) {
+            const tableBody = document.getElementById('jobTableBody');
+            tableBody.innerHTML = '';
+
+            if (jobs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No jobs found</td></tr>';
+                return;
+            }
+
+            jobs.forEach(job => {
+                const row = document.createElement('tr');
+
+                // Job ID (shortened)
+                const idCell = document.createElement('td');
+                const shortId = job.id.substring(0, 8) + '...';
+                idCell.textContent = shortId;
+                idCell.title = job.id;
+                row.appendChild(idCell);
+
+                // Filename
+                const nameCell = document.createElement('td');
+                nameCell.textContent = job.original_filename || 'Unknown file';
+                row.appendChild(nameCell);
+
+                // Status with badge
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.textContent = job.status;
+
+                // Apply different badge styles based on status
+                if (job.status === 'completed') {
+                    statusBadge.className = 'badge bg-success';
+                } else if (job.status === 'processing') {
+                    statusBadge.className = 'badge bg-info';
+                } else if (job.status === 'failed') {
+                    statusBadge.className = 'badge bg-danger';
+                } else {
+                    statusBadge.className = 'badge bg-secondary';
+                }
+
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+
+                // Created at
+                const createdCell = document.createElement('td');
+                createdCell.textContent = job.created_at || '';
+                row.appendChild(createdCell);
+
+                // Actions with Bootstrap buttons
+                const actionCell = document.createElement('td');
+
+                // Create button group for actions
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'btn-group btn-group-sm';
+
+                // View details button
+                const detailsLink = document.createElement('a');
+                detailsLink.href = '/jobs/' + job.id;
+                detailsLink.className = 'btn btn-info';
+                detailsLink.innerHTML = '<i class="bi bi-info-circle"></i> Details';
+                btnGroup.appendChild(detailsLink);
+
+                // Download button if completed
+                if (job.status === 'completed') {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = '/download/' + job.id;
+                    downloadLink.className = 'btn btn-success';
+                    downloadLink.innerHTML = '<i class="bi bi-download"></i> Download';
+                    btnGroup.appendChild(downloadLink);
+                }
+
+                actionCell.appendChild(btnGroup);
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to filter jobs based on input
+        function filterJobs() {
+            const filterValue = document.getElementById('jobFilterInput').value.toLowerCase();
+            const filtered = allJobs.filter(job =>
+                (job.original_filename || '').toLowerCase().includes(filterValue) ||
+                (job.status || '').toLowerCase().includes(filterValue) ||
+                (job.id || '').toLowerCase().includes(filterValue)
+            );
+            renderJobs(filtered);
+        }
+
         // Function to load jobs
         function loadJobs() {
             fetch('/jobs')
                 .then(response => response.json())
                 .then(jobs => {
-                    const tableBody = document.getElementById('jobTableBody');
-                    tableBody.innerHTML = '';
-                    
-                    if (jobs.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No jobs found</td></tr>';
-                        return;
-                    }
-                    
-                    jobs.forEach(job => {
-                        const row = document.createElement('tr');
-                        
-                        // Job ID (shortened)
-                        const idCell = document.createElement('td');
-                        const shortId = job.id.substring(0, 8) + '...';
-                        idCell.textContent = shortId;
-                        idCell.title = job.id;
-                        row.appendChild(idCell);
-                        
-                        // Filename
-                        const nameCell = document.createElement('td');
-                        nameCell.textContent = job.original_filename || 'Unknown file';
-                        row.appendChild(nameCell);
-                        
-                        // Status with badge
-                        const statusCell = document.createElement('td');
-                        const statusBadge = document.createElement('span');
-                        statusBadge.textContent = job.status;
-                        
-                        // Apply different badge styles based on status
-                        if (job.status === 'completed') {
-                            statusBadge.className = 'badge bg-success';
-                        } else if (job.status === 'processing') {
-                            statusBadge.className = 'badge bg-info';
-                        } else if (job.status === 'failed') {
-                            statusBadge.className = 'badge bg-danger';
-                        } else {
-                            statusBadge.className = 'badge bg-secondary';
-                        }
-                        
-                        statusCell.appendChild(statusBadge);
-                        row.appendChild(statusCell);
-                        
-                        // Created at
-                        const createdCell = document.createElement('td');
-                        createdCell.textContent = job.created_at || '';
-                        row.appendChild(createdCell);
-                        
-                        // Actions with Bootstrap buttons
-                        const actionCell = document.createElement('td');
-                        
-                        // Create button group for actions
-                        const btnGroup = document.createElement('div');
-                        btnGroup.className = 'btn-group btn-group-sm';
-                        
-                        // View details button
-                        const detailsLink = document.createElement('a');
-                        detailsLink.href = '/jobs/' + job.id;
-                        detailsLink.className = 'btn btn-info';
-                        detailsLink.innerHTML = '<i class="bi bi-info-circle"></i> Details';
-                        btnGroup.appendChild(detailsLink);
-                        
-                        // Download button if completed
-                        if (job.status === 'completed') {
-                            const downloadLink = document.createElement('a');
-                            downloadLink.href = '/download/' + job.id;
-                            downloadLink.className = 'btn btn-success';
-                            downloadLink.innerHTML = '<i class="bi bi-download"></i> Download';
-                            btnGroup.appendChild(downloadLink);
-                        }
-                        
-                        actionCell.appendChild(btnGroup);
-                        row.appendChild(actionCell);
-                        tableBody.appendChild(row);
-                    });
+                    // Sort jobs descending by created_at (assuming ISO string or sortable format)
+                    jobs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+                    allJobs = jobs;
+                    filterJobs();
                 })
                 .catch(error => {
                     console.error('Error loading jobs:', error);
@@ -187,9 +211,12 @@
                     tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger"><i class="bi bi-exclamation-triangle"></i> Error loading jobs</td></tr>';
                 });
         }
-        
-        // Load jobs when page loads
-        document.addEventListener('DOMContentLoaded', loadJobs);
+
+        // Filter as user types
+        document.addEventListener('DOMContentLoaded', function() {
+            loadJobs();
+            document.getElementById('jobFilterInput').addEventListener('input', filterJobs);
+        });
     </script>
 </body>
 </html>
