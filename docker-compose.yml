@@ -8,8 +8,8 @@ services:
       - ./audio:/app/audio
       # Mount a local directory for output transcriptions
       - ./output:/app/output
-      # mount models downloaded by the container
-      - ./cache:/root/.cache    # Map API port
+      # Mount models downloaded by the container ofr persistence
+      - ./cache:/root/.cache
     environment:
       - PUID=1000
       - PGID=1000
@@ -17,6 +17,12 @@ services:
       - WHISPER_MODEL=large-v3-turbo
       - WHISPER_BEAM=10               #optional, default is 5
       - WHISPER_LANG=ro               #optional
+      # PostgreSQL settings (optional - comment out if not using PostgreSQL)
+      - POSTGRES_HOST=postgres      #uncomment to use PostgreSQL
+      - POSTGRES_PORT=5432          #uncomment to use PostgreSQL
+      - POSTGRES_DB=whisper         #uncomment to use PostgreSQL
+      - POSTGRES_USER=postgres       #uncomment to use PostgreSQL
+      - POSTGRES_PASSWORD=postgres #uncomment to use PostgreSQL
     ports:
       - "10301:10301"
     # Enable GPU support
@@ -26,7 +32,41 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu, compute, utility]
-    # Keep the container running
+              capabilities: [gpu, compute, utility]    # Keep the container running
     stdin_open: true
     tty: true
+    # Link to postgres service if using PostgreSQL
+    depends_on:
+      - postgres
+
+  # PostgreSQL database service (optional)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin4:
+    depends_on:
+      - postgres
+    image: dpage/pgadmin4:9.3.0
+    ports:
+      - 54321:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pgadmin4.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin4_data:/var/lib/pgadmin
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin4_data:
+    driver: local

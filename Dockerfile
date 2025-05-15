@@ -33,7 +33,8 @@ RUN pip install -U \
     torchaudio \
     pydub \
     jsonschema \
-    librosa && \ 
+    librosa \
+    psycopg2-binary && \ 
     pip cache purge
 
 # Set working directory

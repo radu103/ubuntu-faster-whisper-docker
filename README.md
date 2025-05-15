@@ -99,6 +99,25 @@ http://localhost:10301
 - **GET /jobs** - List all jobs
 - **GET /download/:job_id** - Download transcription result
 
+### Storage Options
+
+The system supports two storage backends for job persistence:
+
+1. **File-based storage** (default) - Stores job information in a JSON file
+2. **PostgreSQL database** - Stores job information in a PostgreSQL database
+
+To enable PostgreSQL storage, uncomment the PostgreSQL environment variables in docker-compose.yml:
+
+```yaml
+- POSTGRES_HOST=postgres
+- POSTGRES_PORT=5432
+- POSTGRES_DB=whisper
+- POSTGRES_USER=whisper
+- POSTGRES_PASSWORD=whisperpassword
+```
+
+If using PostgreSQL, the container will automatically detect and connect to the database. If the PostgreSQL connection fails, the system will automatically fall back to file-based storage.
+
 ### Example: Upload a file with cURL
 
 ```bash

@@ -6,6 +6,7 @@ import uuid
 import threading
 import json
 import atexit
+import sys
 
 app = Flask(__name__, static_folder='static')
 
@@ -14,6 +15,22 @@ UPLOAD_FOLDER = '/app/audio'
 OUTPUT_FOLDER = '/app/output'
 JOBS_FILE = '/app/code/static/jobs.json'
 
+# PostgreSQL configuration from environment variables
+PG_HOST = os.environ.get('POSTGRES_HOST')
+PG_PORT = os.environ.get('POSTGRES_PORT', '5432')
+PG_DB = os.environ.get('POSTGRES_DB')
+PG_USER = os.environ.get('POSTGRES_USER')
+PG_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+
+# Flag to determine if PostgreSQL should be used
+USE_POSTGRES = all([PG_HOST, PG_DB, PG_USER, PG_PASSWORD])
+
+# If PostgreSQL is configured, import the necessary module
+if USE_POSTGRES:
+    import psycopg2
+    import psycopg2.extras
+    print("PostgreSQL support enabled")
+
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -21,23 +38,108 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 # Dictionary to store job status
 jobs = {}
 
-# Load existing jobs if the file exists
+# Initialize PostgreSQL if needed
+def init_postgres():
+    if not USE_POSTGRES:
+        return
+    
+    try:
+        conn = psycopg2.connect(
+            host=PG_HOST,
+            port=PG_PORT,
+            database=PG_DB,
+            user=PG_USER,
+            password=PG_PASSWORD
+        )
+        
+        with conn.cursor() as cur:
+            # Create the jobs table if it doesn't exist
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS transcription_jobs (
+                    id TEXT PRIMARY KEY,
+                    data JSONB NOT NULL
+                )
+            ''')
+            conn.commit()
+        conn.close()
+        print("PostgreSQL database initialized")
+    except Exception as e:
+        print(f"Error initializing PostgreSQL: {str(e)}")
+        print("Falling back to file-based storage")
+
+# Load existing jobs from PostgreSQL or file
 def load_jobs():
+    if USE_POSTGRES:
+        try:
+            conn = psycopg2.connect(
+                host=PG_HOST,
+                port=PG_PORT,
+                database=PG_DB,
+                user=PG_USER,
+                password=PG_PASSWORD
+            )
+            
+            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+                cur.execute('SELECT id, data FROM transcription_jobs')
+                job_data = {}
+                for row in cur:
+                    job_data[row[0]] = row[1]
+                conn.close()
+                print(f"Loaded {len(job_data)} jobs from PostgreSQL")
+                return job_data
+        except Exception as e:
+            print(f"Error loading jobs from PostgreSQL: {str(e)}")
+            print("Falling back to file-based storage")
+    
+    # Fall back to file-based storage
     if os.path.exists(JOBS_FILE):
         try:
             with open(JOBS_FILE, 'r') as f:
-                return json.load(f)
+                job_data = json.load(f)
+                print(f"Loaded {len(job_data)} jobs from file")
+                return job_data
         except Exception as e:
             print(f"Error loading jobs file: {str(e)}")
+    
     return {}
 
-# Save jobs to a file
+# Save jobs to PostgreSQL or file
 def save_jobs():
+    if USE_POSTGRES:
+        try:
+            conn = psycopg2.connect(
+                host=PG_HOST,
+                port=PG_PORT,
+                database=PG_DB,
+                user=PG_USER,
+                password=PG_PASSWORD
+            )
+            
+            with conn.cursor() as cur:
+                for job_id, job_data in jobs.items():
+                    # Use UPSERT (INSERT ... ON CONFLICT UPDATE) to handle both new and updated jobs
+                    cur.execute(
+                        'INSERT INTO transcription_jobs (id, data) VALUES (%s, %s) '
+                        'ON CONFLICT (id) DO UPDATE SET data = %s',
+                        (job_id, json.dumps(job_data), json.dumps(job_data))
+                    )
+                conn.commit()
+            conn.close()
+            return
+        except Exception as e:
+            print(f"Error saving jobs to PostgreSQL: {str(e)}")
+            print("Falling back to file-based storage")
+    
+    # Fall back to file-based storage
     try:
         with open(JOBS_FILE, 'w') as f:
             json.dump(jobs, f, indent=2)
     except Exception as e:
         print(f"Error saving jobs file: {str(e)}")
+
+# Initialize PostgreSQL if it's configured
+if USE_POSTGRES:
+    init_postgres()
 
 # Load existing jobs at startup
 jobs = load_jobs()
