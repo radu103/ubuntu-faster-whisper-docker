@@ -4,12 +4,13 @@ import sys
 import time
 import math
 
-model_size = "large-v3-turbo"
+# Get model settings from environment variables or use defaults
+model_size = os.environ.get("WHISPER_MODEL", "large-v3-turbo")
+beam_size = int(os.environ.get("WHISPER_BEAM", "5"))
+lang = os.environ.get("WHISPER_LANG", None)  # None means auto-detect
 
-# Run on GPU with auto
-# model = WhisperModel(model_size, device="cuda", compute_type="float16")
+print(f"Using model: {model_size}, beam size: {beam_size}, language: {lang or 'auto-detect'}")
 
-# Run on CPU with int8, int16, auto
 model = WhisperModel(model_size, device="cpu", compute_type="auto")
 
 # Get audio filename from args or fail if not provided
@@ -49,14 +50,18 @@ print(f"Transcribing {input_path}...")
 start_time = time.time()
 
 try:
-    # Attempt the transcription
-    segments, info = model.transcribe(input_path, vad_filter=True)
-      # Check if language probability is NaN (not a number)
-    if math.isnan(info.language_probability) or info.language_probability < 0.8:
+    # Attempt the transcription with provided language and beam size
+    segments, info = model.transcribe(input_path, beam_size=beam_size, language=lang, vad_filter=True)
+    
+    # Check if language probability is NaN (not a number) when auto-detecting
+    if lang is None and (math.isnan(info.language_probability) or info.language_probability < 0.8):
         print("Error: Language detection failed. Probability is %.2f for language '%s'" % (info.language_probability, info.language))
         sys.exit(1)
         
-    print("Detected language '%s' with probability %.2f" % (info.language, info.language_probability))
+    if lang is None:
+        print("Detected language '%s' with probability %.2f" % (info.language, info.language_probability))
+    else:
+        print(f"Using specified language: {lang}")
     
     # Process segments and prepare text
     full_text = ""
