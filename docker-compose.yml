@@ -22,6 +22,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - DEFAULT_ADMIN_USERNAME=radu
       - DEFAULT_ADMIN_PASSWORD=b9043bd0049b74088b8b27d1a874e1b93a1e8db3516e317847c63c2059098c89
+      - DEFAULT_API_KEY=8c0b1f2a-3d4e-4b5f-8c7d-9a2e6f3b5c1e
     ports:
       - "10301:10301"
     # Enable GPU support

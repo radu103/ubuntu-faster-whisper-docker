@@ -46,6 +46,10 @@ PG_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 
 DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME')
 DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD')
+DEFAULT_API_KEY = os.environ.get('DEFAULT_API_KEY')
+if not DEFAULT_ADMIN_USERNAME or not DEFAULT_ADMIN_PASSWORD:
+    print("Error: Default admin username and password must be set in environment variables.")
+    sys.exit(1)
 
 # Flag to determine if PostgreSQL should be used
 USE_POSTGRES = all([PG_HOST, PG_DB, PG_USER, PG_PASSWORD])
@@ -81,6 +85,15 @@ def hash_password(password):
     return base64.b64encode(salt + key).decode('utf-8')
 
 def verify_password(stored_password, provided_password):
+    # check for api key first in header
+    if 'X-API-Key' in request.headers:
+        api_key = request.headers['X-API-Key']
+        if api_key == DEFAULT_API_KEY:
+            print("API key authentication successful")
+            return True
+
+    print("Password authentication requested")
+    # If the API key is not provided, check for username and password 
     try:
         # Decode the stored password
         decoded = base64.b64decode(stored_password.encode('utf-8'))
@@ -139,8 +152,15 @@ load_users()
 # Authentication middleware
 def login_required(f):
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            return redirect('/login')
+        # check for API key in headers
+        if 'X-API-Key' in request.headers:
+            api_key = request.headers['X-API-Key']
+            if api_key != DEFAULT_API_KEY:
+                return redirect('/login')
+        else:
+            # Check if the user is logged in
+            if 'username' not in session:
+                return redirect('/login')
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
