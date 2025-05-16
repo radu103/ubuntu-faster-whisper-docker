@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, session, redirect, url_for
 import os
 import subprocess
 import time
@@ -7,8 +7,30 @@ import threading
 import json
 import atexit
 import sys
+import secrets
+from flask_session import Session
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+import base64
 
 app = Flask(__name__, static_folder='static')
+
+# Session configuration
+app.config['SECRET_KEY'] = secrets.token_hex(16)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = '/app/code/sessions'  # Directory to store sessions
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+Session(app)
+
+# Ensure sessions directory exists
+os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
+
+# User database - In a real app, this would be in a database
+# Format: {username: hashed_password}
+USERS = {}
+USERS_FILE = '/app/code/users.json'
 
 # Configure upload and output directories
 UPLOAD_FOLDER = '/app/audio'
@@ -21,6 +43,9 @@ PG_PORT = os.environ.get('POSTGRES_PORT', '5432')
 PG_DB = os.environ.get('POSTGRES_DB')
 PG_USER = os.environ.get('POSTGRES_USER')
 PG_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+
+DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME')
+DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD')
 
 # Flag to determine if PostgreSQL should be used
 USE_POSTGRES = all([PG_HOST, PG_DB, PG_USER, PG_PASSWORD])
@@ -37,6 +62,114 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Dictionary to store job status
 jobs = {}
+
+# Password hashing functions
+def hash_password(password):
+    # Generate a random salt
+    salt = os.urandom(16)
+    # Use PBKDF2 to derive a key
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    # Hash the password
+    key = kdf.derive(password.encode())
+    # Return the salt and key as a base64-encoded string
+    return base64.b64encode(salt + key).decode('utf-8')
+
+def verify_password(stored_password, provided_password):
+    try:
+        # Decode the stored password
+        decoded = base64.b64decode(stored_password.encode('utf-8'))
+        salt = decoded[:16]
+        stored_key = decoded[16:]
+        
+        # Hash the provided password with the same salt
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        
+        # Attempt to verify the password
+        kdf.verify(provided_password.encode(), stored_key)
+        return True
+    except Exception:
+        return False
+
+# Load users from file
+def load_users():
+    global USERS
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, 'r') as f:
+                USERS = json.load(f)
+            print(f"Loaded {len(USERS)} users from file")
+        except Exception as e:
+            print(f"Error loading users file: {str(e)}")
+            # If no users exist, create a default admin user
+            if not USERS:
+                create_default_admin()
+    else:
+        create_default_admin()
+
+# Create default admin user
+def create_default_admin():
+    global USERS
+    USERS[DEFAULT_ADMIN_USERNAME] = hash_password(DEFAULT_ADMIN_PASSWORD)
+    save_users()
+    print(f"Created default admin user: {DEFAULT_ADMIN_USERNAME}")
+
+# Save users to file
+def save_users():
+    try:
+        with open(USERS_FILE, 'w') as f:
+            json.dump(USERS, f)
+    except Exception as e:
+        print(f"Error saving users file: {str(e)}")
+
+# Load users at startup
+load_users()
+
+# Authentication middleware
+def login_required(f):
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# Login routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username in USERS and verify_password(USERS[username], password):
+            session['username'] = username
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect('/')
+        else:
+            error = 'Invalid credentials'
+            # Check if the request is from an API client or the static HTML page
+            if 'application/json' in request.headers.get('Accept', ''):
+                return jsonify({"error": error}), 401
+            # If request came from the static login page, redirect back with error
+            if request.referrer and 'login' in request.referrer:
+                return redirect(f"/login?error={error}")
+    
+    # Default to template rendering
+    return send_from_directory('static', 'login.html')
 
 # Initialize PostgreSQL if needed
 def init_postgres():
@@ -200,6 +333,7 @@ def run_transcription(job_id, filepath):
         save_jobs()
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in the request'}), 400
@@ -261,6 +395,7 @@ def upload_file():
         })
 
 @app.route('/jobs/<job_id>', methods=['GET'])
+@login_required
 def get_job_status(job_id):
     if job_id in jobs:
         return jsonify(jobs[job_id])
@@ -268,10 +403,12 @@ def get_job_status(job_id):
         return jsonify({'error': 'Job not found'}), 404
 
 @app.route('/jobs', methods=['GET'])
+@login_required
 def list_jobs():
     return jsonify(list(jobs.values()))
 
 @app.route('/download/<job_id>', methods=['GET'])
+@login_required
 def download_file(job_id):
     if job_id in jobs and jobs[job_id].get('status') == 'completed':
         output_file = jobs[job_id]['output_file']
@@ -281,8 +418,13 @@ def download_file(job_id):
         return jsonify({'error': 'File not available for download'}), 404
 
 @app.route('/', methods=['GET'])
+@login_required
 def index():
     return send_from_directory('static', 'index.html')
+
+@app.route('/login', methods=['GET'])
+def static_login():
+    return send_from_directory('static', 'login.html')
 
 # api runs on port 10301
 if __name__ == '__main__':

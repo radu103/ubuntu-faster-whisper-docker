@@ -25,6 +25,8 @@ RUN pip install -U \
     hf_xet \
     flask \
     flask-cors \
+    flask-session \
+    cryptography \
     requests \
     numpy \
     tqdm \
