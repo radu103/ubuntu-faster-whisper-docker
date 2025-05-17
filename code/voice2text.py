@@ -4,6 +4,8 @@ import sys
 import time
 import math
 
+os.environ["OMP_NUM_THREADS"] = os.environ.get("CPU_PHYSICAL_REAL_CORES", "8")
+
 # Get model settings from environment variables or use defaults
 model_size = os.environ.get("WHISPER_MODEL", "large-v3-turbo")
 beam_size = int(os.environ.get("WHISPER_BEAM", "5"))

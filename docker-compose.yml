@@ -8,10 +8,14 @@ services:
       - faster_whisper_models:/root/.cache
       - faster_whisper_output:/app/output
     environment:
+      - CPU_PHYSICAL_REAL_CORES=10
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Bucharest
       - WHISPER_MODEL=large-v3-turbo
+      - DEFAULT_ADMIN_USERNAME=radu
+      - DEFAULT_ADMIN_PASSWORD=b9043bd0049b74088b8b27d1a874e1b93a1e8db3516e317847c63c2059098c89
+      - DEFAULT_API_KEY=8c0b1f2a-3d4e-4b5f-8c7d-9a2e6f3b5c1e      
       - WHISPER_BEAM=10               #optional, default is 5
       - WHISPER_LANG=ro               #optional
       # PostgreSQL settings (optional - comment out if not using PostgreSQL)
@@ -20,9 +24,6 @@ services:
       - POSTGRES_DB=whisper
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - DEFAULT_ADMIN_USERNAME=radu
-      - DEFAULT_ADMIN_PASSWORD=b9043bd0049b74088b8b27d1a874e1b93a1e8db3516e317847c63c2059098c89
-      - DEFAULT_API_KEY=8c0b1f2a-3d4e-4b5f-8c7d-9a2e6f3b5c1e
     ports:
       - "10301:10301"
     # Enable GPU support
