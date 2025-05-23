@@ -48,6 +48,9 @@ RUN mkdir -p /app/audio /app/output /app/code/static
 # Copy the code into the container
 COPY ./code /app/code
 
+# Copy the jobs file into the container
+COPY ./jobs /app/jobs
+
 # expose ports
 EXPOSE 10301
 

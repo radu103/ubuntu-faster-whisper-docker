@@ -35,7 +35,7 @@ USERS_FILE = '/app/code/users.json'
 # Configure upload and output directories
 UPLOAD_FOLDER = '/app/audio'
 OUTPUT_FOLDER = '/app/output'
-JOBS_FILE = '/app/code/static/jobs.json'
+JOBS_FILE = '/app/jobs/jobs.json'
 
 # PostgreSQL configuration from environment variables
 PG_HOST = os.environ.get('POSTGRES_HOST')

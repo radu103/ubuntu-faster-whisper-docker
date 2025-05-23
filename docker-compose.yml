@@ -5,6 +5,7 @@ services:
     image: radu103/ubuntu-faster-whisper:latest
     volumes:
       - faster_whisper_data:/app/audio
+      - faster_whisper_jobs:/app/jobs
       - faster_whisper_models:/root/.cache
       - faster_whisper_output:/app/output
     environment:
@@ -89,6 +90,12 @@ volumes:
       type: none
       device: R:/ubuntu-faster-whisper/models
       o: bind
+  faster_whisper_jobs:
+    driver: local
+    driver_opts:
+      type: none
+      device: R:/ubuntu-faster-whisper/jobs
+      o: bind      
   faster_whisper_output:
     driver: local
     driver_opts:
