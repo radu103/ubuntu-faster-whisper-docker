@@ -442,6 +442,11 @@ def download_file(job_id):
 def index():
     return send_from_directory('static', 'index.html')
 
+@app.route('/scripts.js', methods=['GET'])
+@login_required
+def scripts():
+    return send_from_directory('static', 'scripts.js')
+
 @app.route('/login', methods=['GET'])
 def static_login():
     return send_from_directory('static', 'login.html')
