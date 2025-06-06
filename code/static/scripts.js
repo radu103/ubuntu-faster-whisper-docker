@@ -342,3 +342,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize audio recording functionality
     initAudioRecording();
 });
+
+// initialize audio recording
+function initAudio() {
+    if (!navigator.webkitGetUserMedia)
+        return(alert("Error: getUserMedia not supported!"));
+
+    navigator.webkitGetUserMedia({audio:true}, gotStream, function(e) {
+        alert('Error getting audio');
+        console.log(e);
+    });
+}
+
+document.addEventListener('load', initAudio );
