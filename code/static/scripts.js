@@ -355,3 +355,15 @@ function initAudio() {
 }
 
 document.addEventListener('load', initAudio );
+
+// Handle form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        e.preventDefault();
+        errorDiv.textContent = 'Please enter both username and password';
+        errorDiv.style.display = 'block';
+    }
+});
